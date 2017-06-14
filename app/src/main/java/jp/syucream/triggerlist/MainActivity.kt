@@ -2,7 +2,9 @@ package jp.syucream.triggerlist
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.TextView
 import org.jetbrains.exposed.sql.*
+import java.util.Random
 
 // FIXME move it
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -15,10 +17,21 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         // FIXME remove it
-        setupDatabase()
+        val texts = setupDatabase()
+
+        // FIXME move as an extension method
+        val randGen = Random()
+        val item = texts.sortedBy { randGen.nextInt() }.first()
 
         // FIXME set text by an item data from database
-        val itemTextView = findViewById(R.id.itemText)
+        val modeText = findViewById(R.id.modeText)
+        val categoryText = findViewById(R.id.categoryText)
+        val itemText = findViewById(R.id.itemText)
+        if (modeText is TextView && categoryText is TextView && itemText is TextView) {
+            modeText.setText(item.elementAt(0))
+            categoryText.setText(item.elementAt(1))
+            itemText.setText(item.elementAt(2))
+        }
     }
 
     /**
@@ -26,9 +39,10 @@ class MainActivity : AppCompatActivity() {
      *
      * FIXME Its for only development.
      */
-    fun setupDatabase() {
+    fun setupDatabase(): Set<Set<String>> {
         Database.connect("jdbc:h2:mem:test", "org.h2.Driver")
 
+        val rv: MutableSet<Set<String>> = mutableSetOf()
         transaction {
             create(Modes, Categories, Items)
 
@@ -39,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
             // dummy categories
             val readingCategoryId = Categories.insert {
-                it[name] = "reading / evaluating"
+                it[name] = "read / review"
                 it[modeId] = workModeId
             } get Categories.id
 
@@ -57,10 +71,13 @@ class MainActivity : AppCompatActivity() {
                 it[categoryId] = readingCategoryId
             }
 
-            // (Items innerJoin Categories innerJoin Modes)
-            //         .slice(Modes.name, Categories.name, Items.text)
-            //         .selectAll()
-            //         .toList()
+            (Items innerJoin Categories innerJoin Modes)
+                    .slice(Modes.name, Categories.name, Items.text)
+                    .selectAll()
+                    .forEach {
+                        rv.add(setOf(it[Modes.name], it[Categories.name], it[Items.text]))
+                    }
         }
+        return rv
     }
 }
