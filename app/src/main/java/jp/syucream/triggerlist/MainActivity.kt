@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
 
         // initialize
-        // init()
+        init()
         updateItemViews(getItems().first())
 
         // update views periodically
@@ -37,12 +37,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun init() {
-        /*
         requestPermissions(arrayOf(
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE"
         ), 200)
-        */
 
         val path = Environment.getExternalStorageDirectory().path + "/" + STORAGE_PATH
         val os = FileOutputStream(path)
