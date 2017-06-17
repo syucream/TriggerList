@@ -1,0 +1,18 @@
+CREATE TABLE modes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name NVARCHAR(512)
+);
+
+CREATE TABLE categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  mode_id INTEGER,
+  name NVARCHAR(512),
+  FOREIGN KEY(mode_id) REFERENCES modes(id)
+);
+
+CREATE TABLE items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER,
+  text NTEXT,
+  FOREIGN KEY(category_id) REFERENCES categories(id)
+);

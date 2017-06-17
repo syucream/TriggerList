@@ -2,13 +2,10 @@ package jp.syucream.triggerlist
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.widget.TextView
-import org.jetbrains.exposed.sql.*
-import java.util.Random
-
-// FIXME move it
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.SchemaUtils.create
+import android.database.sqlite.SQLiteDatabase
+import java.io.FileOutputStream
 
 class MainActivity : AppCompatActivity() {
 
@@ -16,68 +13,39 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // FIXME remove it
-        val texts = setupDatabase()
+        /*
+        requestPermissions(arrayOf(
+            "android.permission.READ_EXTERNAL_STORAGE",
+            "android.permission.WRITE_EXTERNAL_STORAGE"
+        ), 200)
+        */
+        val path = Environment.getExternalStorageDirectory().path + "/tmp.db"
+        val os = FileOutputStream(path)
+        assets.open("tmp.db").copyTo(os)
 
-        // FIXME move as an extension method
-        val randGen = Random()
-        val item = texts.sortedBy { randGen.nextInt() }.first()
+        val db = SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY)
+        val query = """
+            SELECT
+                modes.name, categories.name, items.text
+            FROM
+                items INNER JOIN categories ON items.category_id = categories.id
+                INNER JOIN modes ON categories.mode_id = modes.id
+            ORDER BY
+                RANDOM()
+"""
 
-        // FIXME set text by an item data from database
+        val cursor = db.rawQuery(query, null)
+        cursor.moveToFirst()
+        val textSet = setOf(cursor.getString(0), cursor.getString(1), cursor.getString(2))
+        cursor.close()
+
         val modeText = findViewById(R.id.modeText)
         val categoryText = findViewById(R.id.categoryText)
         val itemText = findViewById(R.id.itemText)
         if (modeText is TextView && categoryText is TextView && itemText is TextView) {
-            modeText.setText(item.elementAt(0))
-            categoryText.setText(item.elementAt(1))
-            itemText.setText(item.elementAt(2))
+            modeText.setText(textSet.elementAt(0))
+            categoryText.setText(textSet.elementAt(1))
+            itemText.setText(textSet.elementAt(2))
         }
-    }
-
-    /**
-     * setup database by dummy data TODO and get an item and relateds from database.
-     *
-     * FIXME Its for only development.
-     */
-    fun setupDatabase(): Set<Set<String>> {
-        Database.connect("jdbc:h2:mem:test", "org.h2.Driver")
-
-        val rv: MutableSet<Set<String>> = mutableSetOf()
-        transaction {
-            create(Modes, Categories, Items)
-
-            // dummy modes
-            val workModeId = Modes.insert {
-                it[name] = "work"
-            } get Modes.id
-
-            // dummy categories
-            val readingCategoryId = Categories.insert {
-                it[name] = "read / review"
-                it[modeId] = workModeId
-            } get Categories.id
-
-            // dummy items
-            Items.insert {
-                it[text] = "book"
-                it[categoryId] = readingCategoryId
-            }
-            Items.insert {
-                it[text] = "magazine"
-                it[categoryId] = readingCategoryId
-            }
-            Items.insert {
-                it[text] = "article"
-                it[categoryId] = readingCategoryId
-            }
-
-            (Items innerJoin Categories innerJoin Modes)
-                    .slice(Modes.name, Categories.name, Items.text)
-                    .selectAll()
-                    .forEach {
-                        rv.add(setOf(it[Modes.name], it[Categories.name], it[Items.text]))
-                    }
-        }
-        return rv
     }
 }
