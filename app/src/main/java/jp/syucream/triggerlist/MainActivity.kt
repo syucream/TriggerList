@@ -6,9 +6,9 @@ import android.os.Environment
 import android.widget.TextView
 import android.database.sqlite.SQLiteDatabase
 import java.io.FileOutputStream
-import io.reactivex.*
-import io.reactivex.android.schedulers.AndroidSchedulers
 import java.util.concurrent.TimeUnit
+import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 
 class MainActivity : AppCompatActivity() {
 
