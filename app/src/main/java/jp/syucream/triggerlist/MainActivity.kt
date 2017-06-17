@@ -75,6 +75,7 @@ class MainActivity : AppCompatActivity() {
             cursor.moveToNext()
         }
         cursor.close()
+        db.close()
 
         return rv
     }
